@@ -1,6 +1,6 @@
 import logging
 
-from data import download_all_datasets
+from datasets import download_all_datasets
 
 
 def main():

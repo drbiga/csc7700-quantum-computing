@@ -140,4 +140,9 @@ def evaluate_quantum():
     print("Evaluation of quantum model - R2 =", r2)
 
 
-evaluate_quantum()
+def main():
+    evaluate_quantum()
+
+
+if __name__ == "__main__":
+    main()

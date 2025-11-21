@@ -30,3 +30,13 @@ def load_housing_train_test() -> (
         df[["MedInc"]], df["MedHouseVal"], test_size=0.2
     )
     return X_train, X_test, y_train, y_test
+
+def load_cancer_train_test() -> (
+    tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]
+):
+    df = pd.read_csv("data/cancer.csv")
+    X_train, X_test, y_train, y_test = train_test_split(
+        df.drop('target', axis=1), df['target'], test_size=0.2
+    )
+
+    return X_train, X_test, y_train, y_test

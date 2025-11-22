@@ -31,6 +31,7 @@ def load_housing_train_test() -> (
     )
     return X_train, X_test, y_train, y_test
 
+
 def load_cancer_train_test() -> (
     tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]
 ):
@@ -40,3 +41,13 @@ def load_cancer_train_test() -> (
     )
 
     return X_train, X_test, y_train, y_test
+
+
+def load_cancer_train_test_qiskit() -> (
+    tuple[pd.DataFrame, pd.Series]
+):
+    df = pd.read_csv("data/cancer.csv")
+    x = df.drop(columns=["target"])
+    y = df["target"]
+    
+    return x, y

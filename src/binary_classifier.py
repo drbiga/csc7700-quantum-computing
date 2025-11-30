@@ -1,5 +1,5 @@
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.svm import SVC
 from sklearn.model_selection import KFold
 
@@ -11,19 +11,25 @@ from qiskit.circuit.library import RealAmplitudes, ZZFeatureMap
 from qiskit_machine_learning.optimizers import SPSA
 from qiskit_machine_learning.algorithms.classifiers import VQC
 from qiskit.primitives import StatevectorSampler as Sampler
+from qiskit_machine_learning.utils import algorithm_globals
 
 from datasets import load_cancer_train_test_qiskit
+
 
 def preprocessing_data(X_train, X_test):
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    pca = PCA(n_components=4)
+    pca = PCA(n_components=3)
     X_train_pca = pca.fit_transform(X_train_scaled)
     X_test_pca  = pca.transform(X_test_scaled)
 
-    return X_train_pca, X_test_pca
+    scaler_mm = MinMaxScaler((0, np.pi/2))
+    X_train_mm = scaler_mm.fit_transform(X_train_pca)
+    X_test_mm = scaler_mm.transform(X_test_pca)
+
+    return X_train_mm, X_test_mm
 
 
 def evaluate_classical(X_train, X_test, y_train, y_test):
@@ -36,7 +42,7 @@ def evaluate_classical(X_train, X_test, y_train, y_test):
 
 def draw_circuits_once():
     
-    num_features = 4
+    num_features = 3
     
     feature_map = ZZFeatureMap(num_features, reps=1, entanglement='linear')
     feature_map.decompose().draw('mpl')
@@ -58,12 +64,11 @@ def evaluate_quantum(X_train, X_test, y_train, y_test):
     num_qubits = num_features
 
     feature_map = ZZFeatureMap(num_features, reps=1, entanglement='linear')
-    feature_map.decompose().draw('mpl')
-
     ansatz = RealAmplitudes(num_qubits, reps=2, entanglement='linear')
-    ansatz.decompose().draw('mpl')
 
     sampler = Sampler()
+
+    algorithm_globals.random_seed = 42
 
     vqc = VQC(
         sampler=sampler,
@@ -125,5 +130,5 @@ def evaluate_both():
 
 
 if __name__ == "__main__":
-    draw_circuits_once()
     evaluate_both()
+    #draw_circuits_once()

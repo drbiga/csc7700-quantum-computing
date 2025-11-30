@@ -51,3 +51,22 @@ def load_cancer_train_test_qiskit() -> (
     y = df["target"]
     
     return x, y
+
+def load_mnist_data() -> (
+    tuple[pd.DataFrame, pd.Series]
+):
+    df = pd.read_csv("data/mnist.csv")
+    x = df.drop(columns=["target"])
+    y = df["target"]
+    
+    return x, y
+
+def load_mnist_data_pennylane() -> (
+    tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]
+):
+    df = pd.read_csv("data/mnist.csv")
+    x_train, x_test, y_train, y_test = train_test_split(
+        df.drop(columns=["target"]), df["target"], test_size=0.2
+    )
+    
+    return x_train, x_test, y_train, y_test

@@ -20,6 +20,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
+from sklearn.metrics import precision_score, recall_score, f1_score
+
 
 NUM_QUBITS = 3
 NUM_COMPONENTS = NUM_QUBITS
@@ -73,8 +75,8 @@ test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=32, shuffle=F
 
 # Define and create QNN
 def create_qnn(num_qubits=3):
-    feature_map = ZZFeatureMap(num_qubits, reps=1)
-    ansatz = RealAmplitudes(num_qubits, reps=2)
+    feature_map = ZZFeatureMap(num_qubits, reps=2)
+    ansatz = RealAmplitudes(num_qubits, reps=3)
 
     qc = QuantumCircuit(num_qubits)
     qc.compose(feature_map, inplace=True)
@@ -207,6 +209,7 @@ for epoch in range(epochs):
 print("=" * 60)
 print("Training completed!\n")
 
+
 plot_loss_convergence(loss_list, acc_list)
 save_model(model4)
 
@@ -255,3 +258,14 @@ with no_grad():
         if mask.sum() > 0:
             digit_acc = 100.0 * (all_preds[mask] == digit).sum() / mask.sum()
             print(f"  Digit {digit}: {digit_acc:.1f}% ({mask.sum()} samples)")
+
+    # Overall Precision, Recall, F1
+    precision = precision_score(all_targets, all_preds, average='macro')
+    recall = recall_score(all_targets, all_preds, average='macro')
+    f1 = f1_score(all_targets, all_preds, average='macro')
+
+    print("\nOverall Evaluation Metrics:")
+    print(f"  Precision: {precision:.4f}")
+    print(f"  Recall:    {recall:.4f}")
+    print(f"  F1 Score:  {f1:.4f}")
+

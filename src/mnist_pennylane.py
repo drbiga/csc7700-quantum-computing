@@ -4,6 +4,36 @@ from pennylane import numpy as np
 from pennylane.optimize import AdamOptimizer
 from datasets import load_mnist_data_pennylane
 
+def precision_recall_f1(labels, predictions):
+    """Compute precision, recall, and F1 score (macro-averaged)."""
+    true_classes = np.argmax(labels, axis=1)
+    pred_classes = np.array([np.argmax(softmax(pred)) for pred in predictions])
+
+    num_classes = labels.shape[1]
+    precision_list, recall_list, f1_list = [], [], []
+
+    for c in range(num_classes):
+        tp = np.sum((pred_classes == c) & (true_classes == c))
+        fp = np.sum((pred_classes == c) & (true_classes != c))
+        fn = np.sum((pred_classes != c) & (true_classes == c))
+
+        precision = tp / (tp + fp + 1e-10)
+        recall = tp / (tp + fn + 1e-10)
+        f1 = 2 * precision * recall / (precision + recall + 1e-10)
+
+        precision_list.append(precision)
+        recall_list.append(recall)
+        f1_list.append(f1)
+
+    # Macro averaging
+    return (
+        float(np.mean(precision_list)),
+        float(np.mean(recall_list)),
+        float(np.mean(f1_list)),
+        pred_classes,
+        true_classes
+    )
+
 # Load your MNIST data (64 features)
 x_train, x_test, y_train, y_test = load_mnist_data_pennylane()
 
@@ -33,7 +63,7 @@ num_qubits = 6
 num_quantum_outputs = 6  # Number of qubits we measure
 num_classes = 10
 
-dev = qml.device('default.qubit', wires=num_qubits)
+dev = qml.device('lightning.qubit', wires=num_qubits)
 
 def layer(layer_weights):
     k = layer_weights.shape[0]
@@ -126,6 +156,16 @@ for epoch in range(10):
             print(f"\tBatch {batch+1:3d} | Cost: {current_cost:0.7f} | Train Acc: {acc:0.4f} | Time: {time.time()-start:.2f}s")
     
     # Test accuracy at end of epoch
+    # Test accuracy + precision + recall + F1 at end of epoch
     predictions_test = [variational_classifier(weights, bias, W_out, x) for x in x_test]
     acc = accuracy(y_test_encoded, predictions_test)
+
+    precision, recall, f1, pred_classes, true_classes = precision_recall_f1(
+        y_test_encoded, predictions_test
+    )
+
     print(f"Epoch {epoch+1} Test Accuracy: {acc*100:0.2f}%")
+    print(f"  Precision (macro): {precision:.4f}")
+    print(f"  Recall (macro):    {recall:.4f}")
+    print(f"  F1 Score (macro):  {f1:.4f}")
+

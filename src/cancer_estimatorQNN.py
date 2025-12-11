@@ -16,7 +16,9 @@ import matplotlib.pyplot as plt
 from datasets import load_cancer_train_test
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import precision_recall_fscore_support, confusion_matrix, classification_report
 from qiskit.quantum_info import SparsePauliOp
+import seaborn as sns
 
 
 NUM_QUBITS = 3
@@ -126,8 +128,26 @@ def plot_loss_convergence(loss_list, acc_list):
     ax2.grid(True)
     
     plt.tight_layout()
-    plt.savefig("training_progress.png")
+    plt.savefig("training_progress_estimatorQNN.png")
     plt.show()
+
+
+def plot_confusion_matrix(y_true, y_pred, class_names=['Malignant', 'Benign']):
+    """Plot confusion matrix"""
+    cm = confusion_matrix(y_true, y_pred)
+    
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
+                xticklabels=class_names, yticklabels=class_names,
+                cbar_kws={'label': 'Count'})
+    plt.title('Confusion Matrix')
+    plt.ylabel('True Label')
+    plt.xlabel('Predicted Label')
+    plt.tight_layout()
+    plt.savefig("confusion_matrix_estimatorQNN.png")
+    plt.show()
+    
+    return cm
 
 
 optimizer = optim.Adam(model4.parameters(), lr=0.05)
@@ -173,6 +193,10 @@ plot_loss_convergence(loss_list, acc_list)
 
 
 # Evaluation
+print("\n" + "=" * 60)
+print("EVALUATION RESULTS")
+print("=" * 60)
+
 model4.eval()
 with no_grad():
     correct = 0
@@ -194,10 +218,45 @@ with no_grad():
     test_acc = 100.0 * correct / len(test_loader.dataset)
     test_loss = sum(total_loss) / len(total_loss)
     
-    print(f"Test Loss:     {test_loss:.4f}")
+    # Calculate precision, recall, F1 score
+    precision, recall, f1, support = precision_recall_fscore_support(
+        all_targets, all_preds, average='binary', zero_division=0
+    )
+    
+    # Macro and weighted averages
+    precision_macro, recall_macro, f1_macro, _ = precision_recall_fscore_support(
+        all_targets, all_preds, average='macro', zero_division=0
+    )
+    
+    print(f"\nTest Loss:     {test_loss:.4f}")
     print(f"Test Accuracy: {test_acc:.1f}%")
+    print(f"\nBinary Classification Metrics (Positive class = 1):")
+    print(f"Precision:     {precision:.4f}")
+    print(f"Recall:        {recall:.4f}")
+    print(f"F1 Score:      {f1:.4f}")
+    print(f"\nMacro Average Metrics:")
+    print(f"Precision:     {precision_macro:.4f}")
+    print(f"Recall:        {recall_macro:.4f}")
+    print(f"F1 Score:      {f1_macro:.4f}")
     
+    # Print detailed classification report
+    print("\n" + "=" * 60)
+    print("DETAILED CLASSIFICATION REPORT")
+    print("=" * 60)
+    print(classification_report(all_targets, all_preds, 
+                                target_names=['Malignant (0)', 'Benign (1)'],
+                                zero_division=0))
     
+    # Plot confusion matrix
+    cm = plot_confusion_matrix(all_targets, all_preds)
+    print("\nConfusion Matrix:")
+    print(cm)
+    print(f"True Negatives:  {cm[0][0]}")
+    print(f"False Positives: {cm[0][1]}")
+    print(f"False Negatives: {cm[1][0]}")
+    print(f"True Positives:  {cm[1][1]}")
+    
+"""    
 # Classical Neural Network for Comparison
 class ClassicalNet(Module):
     def __init__(self, input_dim=3):
@@ -275,3 +334,5 @@ with no_grad():
     print(f"\nClassical Model Results:")
     print(f"Test Loss:     {classical_test_loss:.4f}")
     print(f"Test Accuracy: {classical_test_acc:.1f}%")
+
+"""
